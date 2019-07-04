@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: kstream-connections-aggregation-example
+  kafka:
+    streams:
+      state-dir: ./out/statestore
+      properties:
+        commit.interval.ms: 100
+        default.deserialization.exception.handler: org.apache.kafka.streams.errors.LogAndContinueExceptionHandler
+
+logging:
+  level:
+    org.springframework.kafka: DEBUG
