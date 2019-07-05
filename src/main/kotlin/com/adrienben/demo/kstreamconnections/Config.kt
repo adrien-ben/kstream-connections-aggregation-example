@@ -17,11 +17,11 @@ import org.springframework.kafka.annotation.EnableKafkaStreams
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 
-private const val DNS_TOPIC = "dns"
-private const val CONNECTIONS_TOPIC = "connections"
-private const val CONNECTIONS_REKEY_TOPIC = "connections_rekey"
-private const val SITES_AGGREGATIONS_TOPIC = "site_aggregations"
-private const val SITES_TOPIC = "sites"
+internal const val DNS_TOPIC = "dns"
+internal const val CONNECTIONS_TOPIC = "connections"
+internal const val CONNECTIONS_REKEY_TOPIC = "connections_rekey"
+internal const val SITES_AGGREGATIONS_STORE = "site_aggregations"
+internal const val SITES_TOPIC = "sites"
 
 @Configuration
 @EnableKafkaStreams
@@ -77,7 +77,7 @@ class StreamConfig @Autowired constructor(
                                 this.sourceIps.add(ConnectionEvent(c.sourceIp))
                             }
                         },
-                        Materialized.`as`<String, Server>(Stores.persistentKeyValueStore(SITES_AGGREGATIONS_TOPIC))
+                        Materialized.`as`<String, Server>(Stores.persistentKeyValueStore(SITES_AGGREGATIONS_STORE))
                                 .withKeySerde(stringSerde)
                                 .withValueSerde(serverSerde)
                 )

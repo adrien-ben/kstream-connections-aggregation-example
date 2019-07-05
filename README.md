@@ -81,5 +81,9 @@ the server ip and all connection events.
 ## Run the app 
 
 ```sh
+# Run app
 ./gradlew bootRun
+
+#Run tests (note the clean to ensure the state store is cleaned up)
+./gradlew clean test
 ```
