@@ -20,7 +20,10 @@ import org.springframework.kafka.test.utils.KafkaTestUtils.*
 import java.time.Duration
 
 @SpringBootTest
-@EmbeddedKafka(topics = [DNS_TOPIC, CONNECTIONS_TOPIC, CONNECTIONS_REKEY_TOPIC, SITES_TOPIC], ports = [9092])
+@EmbeddedKafka(
+        topics = [DNS_TOPIC, CONNECTIONS_TOPIC, CONNECTIONS_BY_IP_REKEY_TOPIC, CONNECTIONS_BY_NAME_REKEY_TOPIC, SITES_TOPIC],
+        ports = [9092]
+)
 class AppTests @Autowired constructor(
         private val embeddedKafka: EmbeddedKafkaBroker,
         private val mapper: ObjectMapper

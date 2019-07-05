@@ -64,14 +64,14 @@ These will just be logged as errors.
 
 - The connections by ip
 
-These will by re-keyed so the key of the messages will now be the server id and sent to the `connections_rekey`.
+These will by re-keyed so the key of the messages will now be the server id and sent to the `connections_by_ip_rekey`.
 
 - The connections by address
 
 These will be joined with the dns KTable so the server id will be resolved from its name.
 Then the messages will be treated just like the messages from the previous branch (re-key + push).
 
-Then all connection messages from `connections_rekey` will be grouped by key and aggregated into a message containing 
+Then all connection messages from `connections_by_ip_rekey` will be grouped by key and aggregated into a message containing 
 the server ip and all connection events.
 
 ## Topology

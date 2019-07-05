@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.*
@@ -19,7 +20,9 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 internal const val DNS_TOPIC = "dns"
 internal const val CONNECTIONS_TOPIC = "connections"
-internal const val CONNECTIONS_REKEY_TOPIC = "connections_rekey"
+internal const val CONNECTIONS_BY_IP_REKEY_TOPIC = "connections_by_ip_rekey"
+internal const val CONNECTIONS_BY_NAME_REKEY_TOPIC = "connections_by_name_rekey"
+internal const val DNS_STORE = "dns_store"
 internal const val SITES_AGGREGATIONS_STORE = "site_aggregations"
 internal const val SITES_TOPIC = "sites"
 
@@ -36,7 +39,10 @@ class StreamConfig @Autowired constructor(
 
     @Bean
     fun kStream(streamBuilder: StreamsBuilder): KStream<String, Server> {
-        val dnsTable = streamBuilder.table<String, String>(DNS_TOPIC, Consumed.with(stringSerde, stringSerde))
+        val dnsTable = streamBuilder.table<String, String>(
+                DNS_TOPIC,
+                Consumed.with(stringSerde, stringSerde),
+                materializedAsPersistentStore(DNS_STORE, stringSerde, stringSerde))
 
         val connections = streamBuilder
                 .stream<String, Connection>(CONNECTIONS_TOPIC, Consumed.with(stringSerde, connectionSerde))
@@ -49,25 +55,26 @@ class StreamConfig @Autowired constructor(
         // Connection with an ip
         connections[0]
                 .selectKey { _, v -> v.serverIp }
-                .to(CONNECTIONS_REKEY_TOPIC, Produced.with(stringSerde, connectionSerde))
+                .to(CONNECTIONS_BY_IP_REKEY_TOPIC, Produced.with(stringSerde, connectionSerde))
 
         // Connection with no Ip but a name. Ip must be resolved.
         connections[1]
                 .selectKey { _, v -> v.serverName }
-                .join(
+                .through(CONNECTIONS_BY_NAME_REKEY_TOPIC, Produced.with(stringSerde, connectionSerde))
+                .leftJoin(
                         dnsTable,
                         { c, mapping -> c.apply { this.serverIp = mapping } },
                         Joined.with(stringSerde, connectionSerde, stringSerde)
                 )
                 .selectKey { _, v -> v.serverIp }
-                .to(CONNECTIONS_REKEY_TOPIC, Produced.with(stringSerde, connectionSerde))
+                .to(CONNECTIONS_BY_IP_REKEY_TOPIC, Produced.with(stringSerde, connectionSerde))
 
         // Invalid connections (no ip nor name)
         connections[2]
                 .peek { k, v -> logger.error("Received invalid connections: $k - $v") }
 
         return streamBuilder
-                .stream<String, Connection>(CONNECTIONS_REKEY_TOPIC, Consumed.with(stringSerde, connectionSerde))
+                .stream<String, Connection>(CONNECTIONS_BY_IP_REKEY_TOPIC, Consumed.with(stringSerde, connectionSerde))
                 .groupByKey()
                 .aggregate(
                         { Server() },
@@ -77,9 +84,7 @@ class StreamConfig @Autowired constructor(
                                 this.sourceIps.add(ConnectionEvent(c.sourceIp))
                             }
                         },
-                        Materialized.`as`<String, Server>(Stores.persistentKeyValueStore(SITES_AGGREGATIONS_STORE))
-                                .withKeySerde(stringSerde)
-                                .withValueSerde(serverSerde)
+                        materializedAsPersistentStore(SITES_AGGREGATIONS_STORE, stringSerde, serverSerde)
                 )
                 .toStream()
                 .apply { this.to(SITES_TOPIC, Produced.with(stringSerde, serverSerde)) }
@@ -90,6 +95,11 @@ class StreamConfig @Autowired constructor(
      */
     private fun <T> jsonSerde(clazz: Class<T>) =
             Serdes.serdeFrom(JsonSerializer(mapper), JsonDeserializer(clazz, mapper, false))
+
+    private fun <K, V> materializedAsPersistentStore(storeName: String, keySerde: Serde<K>, valueSerde: Serde<V>) =
+            Materialized.`as`<K, V>(Stores.persistentKeyValueStore(storeName))
+                    .withKeySerde(keySerde)
+                    .withValueSerde(valueSerde)
 }
 
 /**
