@@ -92,4 +92,12 @@ the server ip and all connection events.
 ./mvnw test
 ```
 
+You will also need a running Kafka instance. If you have docker installed this project has a
+docker-compose file that starts a zookeeper, a kafka broker and kafkahq which is a nice ui
+that ease the interaction with the kafka broker and that you can access at localhost:8090.
+
+```sh
+docker-compose up -d
+```
+
 [0]: https://github.com/adrien-ben/kstream-connections-aggregation-example/tree/kotlin_gradle
