@@ -1,5 +1,7 @@
 # KStream connection aggregation example
 
+[![Build Status](https://travis-ci.com/adrien-ben/kstream-sales-aggregation-example.svg?branch=master)](https://travis-ci.com/adrien-ben/kstream-sales-aggregation-example)
+
 This is a simple Kafka Stream project that aggregates connections to servers.
 
 This is written in java 11 and uses maven. You can find the equivalent in Kotlin with Gradle on [this][0] branch.
