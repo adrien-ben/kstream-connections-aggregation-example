@@ -21,6 +21,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.Duration;
 import java.util.Set;
@@ -37,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 @EmbeddedKafka(
 		topics = { DNS_TOPIC, CONNECTIONS_TOPIC, CONNECTIONS_BY_IP_REKEY_TOPIC, CONNECTIONS_BY_NAME_REKEY_TOPIC, SITES_TOPIC },
-		ports = { 9092 }
+		ports = { 19092 }
 )
+@TestPropertySource(properties = "spring.kafka.bootstrap-servers=localhost:19092")
 public class AppTests {
 
 	@Autowired
